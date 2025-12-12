@@ -37,3 +37,10 @@ build-errors.log
 
 # Debug
 __debug_bin
+.zip
+*.zip
+*.tar.gz
+*.tar
+*.tar
+*.gz
+*.rar
