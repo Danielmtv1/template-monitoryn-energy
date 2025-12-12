@@ -1,0 +1,201 @@
+basePath: /
+definitions:
+  entities.ExampleEntity:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  rest.CreateExampleRequest:
+    properties:
+      description:
+        example: This is an example description
+        type: string
+      name:
+        example: My Example
+        type: string
+    required:
+    - name
+    type: object
+  rest.ErrorResponse:
+    properties:
+      error:
+        example: error message
+        type: string
+    type: object
+  rest.UpdateExampleRequest:
+    properties:
+      description:
+        example: Updated description
+        type: string
+      name:
+        example: Updated Example
+        type: string
+    type: object
+host: localhost:9000
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: Go microservice template with hexagonal architecture
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Monitoring Energy Service API
+  version: "1.0"
+paths:
+  /api/v1/examples:
+    get:
+      consumes:
+      - application/json
+      description: Get all examples from the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.ExampleEntity'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: List all examples
+      tags:
+      - examples
+    post:
+      consumes:
+      - application/json
+      description: Create a new example with the provided data
+      parameters:
+      - description: Example data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.CreateExampleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.ExampleEntity'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Create a new example
+      tags:
+      - examples
+  /api/v1/examples/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an example by ID
+      parameters:
+      - description: Example ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Delete an example
+      tags:
+      - examples
+    get:
+      consumes:
+      - application/json
+      description: Get a single example by its UUID
+      parameters:
+      - description: Example ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.ExampleEntity'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get an example by ID
+      tags:
+      - examples
+    put:
+      consumes:
+      - application/json
+      description: Update an existing example by ID
+      parameters:
+      - description: Example ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Example data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.UpdateExampleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.ExampleEntity'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Update an example
+      tags:
+      - examples
+schemes:
+- http
+- https
+swagger: "2.0"
