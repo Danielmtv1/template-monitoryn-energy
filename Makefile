@@ -52,6 +52,9 @@ goose-status:
 hash:
 	atlas migrate hash --env local
 
+console-kafka:
+	docker exec -it monitoring-energy-kafka /bin/bash
+
 # Dev Tools Installation
 install-dev-tools:
 	go install github.com/air-verse/air@latest

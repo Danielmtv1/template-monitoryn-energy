@@ -54,8 +54,8 @@ func NewContainer(
 	container.WebhookAdapter = webhookAdapter
 
 	// Register Kafka handlers here
-	// Example:
-	// kafkaService.RegisterHandler(container.cfg.ConsumerTopic, someHandler)
+	intakeHandler := api.NewIntakeHandler()
+	kafkaService.RegisterHandler(container.cfg.ConsumerTopic, intakeHandler)
 
 	return container
 }

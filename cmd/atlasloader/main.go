@@ -13,6 +13,7 @@ import (
 func main() {
 	stmts, err := gormschema.New("postgres").Load(
 		&entities.ExampleEntity{},
+		&entities.EnergyPlants{},
 		// Add more entities here as needed
 	)
 	if err != nil {
