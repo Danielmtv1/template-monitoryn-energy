@@ -265,3 +265,18 @@ ALLOWED_CORS_SUFFIXES=.spotcloud.io
 | `make goose-status` | Migration status |
 | `make install-dev-tools` | Install dev tools |
 | `make swagger` | Generate Swagger docs manually |
+
+
+## task
+
+1.	definir una entidad de eventos
+2.  crear un script de envio de eventos a kafka
+3.	guardar esos eventos 
+4.  get REST para ver los eventos 
+
+--
+
+diseñar una base de datos de 3 o 4 schemas,  capa master capa operativa capa analitica 
+
+agregar logica, workers para gestionar la data 
+
