@@ -14,6 +14,7 @@ func main() {
 	stmts, err := gormschema.New("postgres").Load(
 		&entities.ExampleEntity{},
 		&entities.EnergyPlants{},
+		&entities.EventEntity{},
 		// Add more entities here as needed
 	)
 	if err != nil {

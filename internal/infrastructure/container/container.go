@@ -17,12 +17,19 @@ import (
 
 type ContainerOption func(*Container)
 
+// Container mantiene todas las dependencias de la aplicación (Dependency Injection)
+//
+// CAMBIOS REALIZADOS:
+// - Agregado EventRepository (línea 26): Para acceso a base de datos de eventos
+// - Agregado EventGenerator (línea 27): Para generar eventos automáticamente
 type Container struct {
 	db                *gorm.DB
 	cfg               conf.Config
 	KafkaService      input.KafkaServiceInterface
 	WebhookAdapter    output.WebhookAdapterInterface
 	ExampleRepository output.ExampleRepositoryInterface
+	EventRepository   output.EventRepositoryInterface // CAMBIO: Agregado para gestionar eventos en DB
+	EventGenerator    *api.EventGenerator             // CAMBIO: Agregado para generar eventos cada 5 min
 }
 
 func NewContainer(
@@ -43,6 +50,11 @@ func NewContainer(
 	exampleRepository := repositories.NewExampleRepository(db)
 	container.ExampleRepository = exampleRepository
 
+	// CAMBIO: Inicializa EventRepository
+	// RAZÓN: Necesario para que IntakeHandler y REST API puedan acceder a eventos en DB
+	eventRepository := repositories.NewEventRepository(db)
+	container.EventRepository = eventRepository
+
 	// Initialize Kafka
 	kafkaFactory := kafkaconf.NewKafkaFactory(kafkaBrokers, autoOffset)
 	kafkaAdapter := kafka.NewKafkaAdapter(kafkaFactory, consumerGroup)
@@ -54,8 +66,15 @@ func NewContainer(
 	container.WebhookAdapter = webhookAdapter
 
 	// Register Kafka handlers here
-	intakeHandler := api.NewIntakeHandler()
+	// CAMBIO: IntakeHandler ahora recibe eventRepository como parámetro
+	// RAZÓN: Necesita el repositorio para guardar eventos consumidos desde Kafka en PostgreSQL
+	intakeHandler := api.NewIntakeHandler(eventRepository)
 	kafkaService.RegisterHandler(container.cfg.ConsumerTopic, intakeHandler)
+
+	// CAMBIO: Inicializa Event Generator con topic "intake"
+	// RAZÓN: Genera automáticamente 30 eventos cada 5 minutos enviándolos a Kafka
+	eventGenerator := api.NewEventGenerator(kafkaService, "intake")
+	container.EventGenerator = eventGenerator
 
 	return container
 }

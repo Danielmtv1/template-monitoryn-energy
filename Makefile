@@ -6,6 +6,8 @@ export
 # Development
 dev:
 	swag init -g main.go -o docs && air
+run2:
+	docker compose --profile dev up -d --build
 
 dev-modd:
 	swag init -g main.go -o docs && modd

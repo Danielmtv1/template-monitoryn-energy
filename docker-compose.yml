@@ -9,7 +9,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: monitoring_energy
+      POSTGRES_DB: monitoring_energy2
     ports:
       - "5432:5432"
     volumes:
@@ -90,9 +90,40 @@ services:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092 
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
       DYNAMIC_CONFIG_ENABLED: "true"
+
+  # CAMBIO: Servicio API agregado (líneas 97-121)
+  # RAZÓN: Contenedor opcional para correr la aplicación Go en Docker
+  # NOTA: Actualmente NO se usa porque corremos la app directamente con "go run main.go"
+  # pero está disponible para deploy en producción
+  # api:
+  #   profiles: ["dev"]
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: monitoring-energy-api
+  #   ports:
+  #     - "9000:9000"  # Expone API REST en puerto 9000
+  #   environment:
+  #     PORT: 9000
+  #     ENVIRONMENT: dev
+  #     DATABASE_HOST: db  # CAMBIO: Usa nombre del servicio de Docker Compose
+  #     DATABASE_PORT: 5432
+  #     DATABASE_NAME: monitoring_energy
+  #     DATABASE_USER: postgres
+  #     DATABASE_PASSWORD: postgres
+  #     DATABASE_SCHEMA: public
+  #     LIST_KAFKA_BROKERS: kafka:29092  # CAMBIO: Usa puerto interno de Kafka
+  #     CONSUMER_GROUP: monitoring-energy-group
+  #     CONSUMER_TOPIC: intake  # CAMBIO: Topic correcto para consumir eventos
+  #     PRODUCER_TOPIC: intake
+  #   depends_on:
+  #     - db
+  #     - kafka
+  #   volumes:
+  #     - .:/app
 
 volumes:
   postgres_data:

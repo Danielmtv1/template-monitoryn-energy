@@ -1,5 +1,22 @@
 basePath: /
 definitions:
+  entities.EventEntity:
+    properties:
+      created_at:
+        type: string
+      data:
+        description: Cambiado de jsonb a text para compatibilidad con GORM string
+          type
+        type: string
+      event_type:
+        type: string
+      id:
+        type: string
+      metadata:
+        type: string
+      source:
+        type: string
+    type: object
   entities.ExampleEntity:
     properties:
       createdAt:
@@ -52,6 +69,83 @@ info:
   title: Monitoring Energy Service API
   version: "1.0"
 paths:
+  /api/v1/events:
+    get:
+      consumes:
+      - application/json
+      description: Get all events from the database ordered by creation time
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.EventEntity'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: List all events
+      tags:
+      - events
+  /api/v1/events/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a single event by its UUID
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.EventEntity'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get an event by ID
+      tags:
+      - events
+  /api/v1/events/type/{type}:
+    get:
+      consumes:
+      - application/json
+      description: Get all events filtered by event type
+      parameters:
+      - description: Event Type
+        in: path
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.EventEntity'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get events by type
+      tags:
+      - events
   /api/v1/examples:
     get:
       consumes:
