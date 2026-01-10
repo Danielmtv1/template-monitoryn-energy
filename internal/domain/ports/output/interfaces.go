@@ -44,3 +44,16 @@ type EventRepositoryInterface interface {
 	FindByID(id uuid.UUID) (*entities.EventEntity, error)
 	FindByEventType(eventType string) ([]*entities.EventEntity, error)
 }
+
+// EnergyPlantRepositoryInterface define el contrato para la persistencia de plantas de energía
+//
+// CAMBIO REALIZADO: Interface agregada
+// RAZÓN: Necesitamos validar que las plantas existen antes de guardar eventos
+//
+// MÉTODOS:
+// - FindByID: Verifica si una planta existe por su UUID
+// - Exists: Método rápido para validar existencia
+type EnergyPlantRepositoryInterface interface {
+	FindByID(id uuid.UUID) (*entities.EnergyPlants, error)
+	Exists(id uuid.UUID) (bool, error)
+}

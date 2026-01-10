@@ -72,3 +72,7 @@ generate:
 
 zip:
 	git archive --format=zip --output=service_$(shell git describe --tags --always --dirty).zip $(shell git write-tree)
+
+
+
+

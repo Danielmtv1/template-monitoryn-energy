@@ -13,7 +13,7 @@ type EnergyPlants struct {
 	CapacityMW float64        `gorm:"type:float"`
 	CreatedAt  time.Time      `gorm:"autoCreateTime"`
 	UpdatedAt  time.Time      `gorm:"autoUpdateTime"`
-	DeletedAt  gorm.DeletedAt `gorm:"index"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" swaggerignore:"true"`
 }
 
 func (EnergyPlants) TableName() string {

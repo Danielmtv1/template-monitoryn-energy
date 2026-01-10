@@ -7,6 +7,8 @@ import (
 	"monitoring-energy-service/internal/domain/entities"
 	"monitoring-energy-service/internal/domain/ports/input"
 	"monitoring-energy-service/internal/domain/ports/output"
+
+	"github.com/google/uuid"
 )
 
 // IntakeHandler procesa mensajes consumidos desde Kafka
@@ -15,20 +17,25 @@ import (
 // Actúa como consumer de Kafka para el topic "intake", recibiendo eventos y
 // guardándolos en PostgreSQL para análisis posterior.
 //
-// CAMBIO REALIZADO: Se agregó EventRepository como dependencia
-// RAZÓN: Necesitábamos persistir los eventos consumidos en la base de datos
+// CAMBIO REALIZADO: Se agregó EventRepository y EnergyPlantRepository como dependencias
+// RAZÓN: Necesitábamos persistir los eventos y validar que las plantas existen
 type IntakeHandler struct {
-	eventRepository output.EventRepositoryInterface // CAMBIO: Agregado para guardar eventos en DB
+	eventRepository      output.EventRepositoryInterface      // Para guardar eventos en DB
+	energyPlantRepository output.EnergyPlantRepositoryInterface // Para validar que las plantas existen
 }
 
 var _ input.MessageHandler = &IntakeHandler{}
 
 // NewIntakeHandler crea una nueva instancia del handler de Kafka
-// CAMBIO: Ahora recibe eventRepository como parámetro
-// RAZÓN: Necesita acceso a la DB para guardar los eventos consumidos
-func NewIntakeHandler(eventRepository output.EventRepositoryInterface) *IntakeHandler {
+// CAMBIO: Ahora recibe eventRepository y energyPlantRepository como parámetros
+// RAZÓN: Necesita validar plantas antes de guardar eventos
+func NewIntakeHandler(
+	eventRepository output.EventRepositoryInterface,
+	energyPlantRepository output.EnergyPlantRepositoryInterface,
+) *IntakeHandler {
 	return &IntakeHandler{
-		eventRepository: eventRepository,
+		eventRepository:       eventRepository,
+		energyPlantRepository: energyPlantRepository,
 	}
 }
 
@@ -69,6 +76,36 @@ func (h *IntakeHandler) HandleMessage(message []byte) error {
 		source = plantName
 	}
 
+	// CAMBIO: Extrae plant_source_id del mensaje
+	// RAZÓN: Necesitamos el UUID de la planta para relacionar el evento con la tabla energy_plants
+	var plantSourceId uuid.UUID
+	if plantSourceIdStr, ok := data["plant_source_id"].(string); ok {
+		parsedUUID, err := uuid.Parse(plantSourceIdStr)
+		if err != nil {
+			log.Printf("ERROR: Invalid plant_source_id format: %v - Message rejected", err)
+			return err
+		}
+		plantSourceId = parsedUUID
+	} else {
+		log.Printf("ERROR: plant_source_id not found in message - Message rejected")
+		return nil // No retornamos error para que Kafka no reintente, pero no guardamos el evento
+	}
+
+	// CAMBIO: Validar que la planta existe en la base de datos
+	// RAZÓN: Solo guardamos eventos de plantas válidas para mantener integridad referencial
+	exists, err := h.energyPlantRepository.Exists(plantSourceId)
+	if err != nil {
+		log.Printf("ERROR: Failed to validate plant existence for plant_source_id=%s: %v", plantSourceId, err)
+		return err
+	}
+	if !exists {
+		log.Printf("WARNING: Event rejected - plant_source_id=%s does not exist in database. EventType=%s, Source=%s",
+			plantSourceId, eventType, source)
+		return nil // No guardamos el evento pero no causamos retry en Kafka
+	}
+
+	log.Printf("✓ Plant validated successfully: plant_source_id=%s", plantSourceId)
+
 	// CAMBIO: Convierte data completo a JSON string
 	// RAZÓN: PostgreSQL almacena el JSON completo como texto para consultas posteriores
 	dataJSON, err := json.Marshal(data)
@@ -80,9 +117,10 @@ func (h *IntakeHandler) HandleMessage(message []byte) error {
 	// CAMBIO: Crea entidad de evento
 	// RAZÓN: Mapea el mensaje de Kafka a nuestra estructura de base de datos
 	event := &entities.EventEntity{
-		EventType: eventType,
-		Source:    source,
-		Data:      string(dataJSON),
+		EventType:     eventType,
+		PlantSourceId: plantSourceId,
+		Source:        source,
+		Data:          string(dataJSON),
 	}
 
 	// CAMBIO: Guarda en PostgreSQL

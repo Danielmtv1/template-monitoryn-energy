@@ -1,5 +1,20 @@
 basePath: /
 definitions:
+  entities.EnergyPlants:
+    properties:
+      capacityMW:
+        type: number
+      createdAt:
+        type: string
+      id:
+        type: string
+      location:
+        type: string
+      plantName:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   entities.EventEntity:
     properties:
       created_at:
@@ -13,6 +28,12 @@ definitions:
       id:
         type: string
       metadata:
+        type: string
+      plant_source:
+        allOf:
+        - $ref: '#/definitions/entities.EnergyPlants'
+        description: Relaciones
+      plant_source_id:
         type: string
       source:
         type: string

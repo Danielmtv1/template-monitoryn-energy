@@ -358,6 +358,29 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "entities.EnergyPlants": {
+            "type": "object",
+            "properties": {
+                "capacityMW": {
+                    "type": "number"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "plantName": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.EventEntity": {
             "type": "object",
             "properties": {
@@ -375,6 +398,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "metadata": {
+                    "type": "string"
+                },
+                "plant_source": {
+                    "description": "Relaciones",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entities.EnergyPlants"
+                        }
+                    ]
+                },
+                "plant_source_id": {
                     "type": "string"
                 },
                 "source": {
