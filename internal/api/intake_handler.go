@@ -1,6 +1,8 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"log"
 
@@ -52,7 +54,23 @@ func NewIntakeHandler(
 // CAMBIO REALIZADO: Completamente reescrito desde el TODO inicial
 // RAZÓN: Implementar la persistencia de eventos en PostgreSQL
 func (h *IntakeHandler) HandleMessage(message []byte) error {
-	log.Printf("Received message on intake topic: %s", string(message))
+	// CAMBIO: Log safe metadata instead of raw message to avoid exposing PII
+	// RAZÓN: Evita exponer datos sensibles en logs, usa hash y tamaño del mensaje
+	hash := sha256.Sum256(message)
+	hashHex := hex.EncodeToString(hash[:])
+
+	// Preview: primeros 50 bytes (o menos si el mensaje es más corto)
+	previewLen := 50
+	if len(message) < previewLen {
+		previewLen = len(message)
+	}
+	preview := string(message[:previewLen])
+	if len(message) > previewLen {
+		preview += "..."
+	}
+
+	log.Printf("Received message on intake topic - Size: %d bytes, SHA256: %s, Preview: %s",
+		len(message), hashHex, preview)
 
 	// CAMBIO: Parse del mensaje JSON
 	// RAZÓN: Necesitamos extraer campos específicos (event_type, plant_name)
@@ -61,6 +79,23 @@ func (h *IntakeHandler) HandleMessage(message []byte) error {
 		log.Printf("Error unmarshaling message: %v", err)
 		return err
 	}
+
+	// CAMBIO: Log solo campos seguros después del parsing
+	// RAZÓN: Permite debugging sin exponer payload completo con posible PII
+	safeEventType := "unknown"
+	if et, ok := data["event_type"].(string); ok {
+		safeEventType = et
+	}
+	safePlantName := "not_specified"
+	if pn, ok := data["plant_name"].(string); ok {
+		safePlantName = pn
+	}
+	safePlantSourceId := "not_specified"
+	if psid, ok := data["plant_source_id"].(string); ok {
+		safePlantSourceId = psid
+	}
+	log.Printf("Parsed safe fields - EventType: %s, PlantName: %s, PlantSourceId: %s",
+		safeEventType, safePlantName, safePlantSourceId)
 
 	// CAMBIO: Extrae event_type del mensaje
 	// RAZÓN: Indexamos por event_type para filtrado rápido en queries
