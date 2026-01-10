@@ -135,9 +135,10 @@ func (h *IntakeHandler) HandleMessage(message []byte) error {
 		return err
 	}
 	if !exists {
-		log.Printf("WARNING: Event rejected - plant_source_id=%s does not exist in database. EventType=%s, Source=%s",
+		log.Printf("ERROR: Event rejected - plant_source_id=%s does not exist in database. EventType=%s, Source=%s - Message will be retried or sent to DLQ",
 			plantSourceId, eventType, source)
-		return nil // No guardamos el evento pero no causamos retry en Kafka
+		return fmt.Errorf("plant_source_id=%s does not exist in database (eventType=%s, source=%s)",
+			plantSourceId, eventType, source)
 	}
 
 	log.Printf("✓ Plant validated successfully: plant_source_id=%s", plantSourceId)
