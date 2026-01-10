@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"monitoring-energy-service/internal/domain/entities"
@@ -117,13 +118,13 @@ func (h *IntakeHandler) HandleMessage(message []byte) error {
 	if plantSourceIdStr, ok := data["plant_source_id"].(string); ok {
 		parsedUUID, err := uuid.Parse(plantSourceIdStr)
 		if err != nil {
-			log.Printf("ERROR: Invalid plant_source_id format: %v - Message rejected", err)
-			return err
+			log.Printf("ERROR: Invalid plant_source_id format: %v - Message will be retried or sent to DLQ", err)
+			return fmt.Errorf("invalid plant_source_id format: %v", err)
 		}
 		plantSourceId = parsedUUID
 	} else {
-		log.Printf("ERROR: plant_source_id not found in message - Message rejected")
-		return nil // No retornamos error para que Kafka no reintente, pero no guardamos el evento
+		log.Printf("ERROR: plant_source_id not found in message - Message will be retried or sent to DLQ")
+		return fmt.Errorf("missing plant_source_id field in message")
 	}
 
 	// CAMBIO: Validar que la planta existe en la base de datos
