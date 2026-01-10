@@ -20,7 +20,9 @@ RUN CGO_ENABLED=1 \
     go build -v -ldflags "-s -w" -o /monitoring-energy-service main.go
 
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    librdkafka1 \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /monitoring-energy-service /monitoring-energy-service
 WORKDIR /
