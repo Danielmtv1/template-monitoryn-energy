@@ -1,7 +1,10 @@
 package repositories
 
 import (
+	"errors"
+
 	"monitoring-energy-service/internal/domain/entities"
+	domainerrors "monitoring-energy-service/internal/domain/errors"
 	"monitoring-energy-service/internal/domain/ports/output"
 
 	"github.com/google/uuid"
@@ -52,9 +55,14 @@ func (r *EventRepository) FindAll() ([]*entities.EventEntity, error) {
 // FindByID busca un evento específico por su ID
 // CAMBIO: Método nuevo
 // RAZÓN: Permite a la API REST obtener un evento individual
+// CAMBIO: Ahora traduce gorm.ErrRecordNotFound a domainerrors.ErrNotFound
+// RAZÓN: Permite a los handlers distinguir entre 404 (not found) y 500 (internal error)
 func (r *EventRepository) FindByID(id uuid.UUID) (*entities.EventEntity, error) {
 	var entity entities.EventEntity
 	if err := r.db.First(&entity, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, domainerrors.ErrNotFound
+		}
 		return nil, err
 	}
 	return &entity, nil

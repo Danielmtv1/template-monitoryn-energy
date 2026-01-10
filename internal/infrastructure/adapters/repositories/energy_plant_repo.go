@@ -1,7 +1,10 @@
 package repositories
 
 import (
+	"errors"
+
 	"monitoring-energy-service/internal/domain/entities"
+	domainerrors "monitoring-energy-service/internal/domain/errors"
 	"monitoring-energy-service/internal/domain/ports/output"
 
 	"github.com/google/uuid"
@@ -31,9 +34,14 @@ func NewEnergyPlantRepository(db *gorm.DB) *EnergyPlantRepository {
 // FindByID busca una planta por su UUID
 // CAMBIO: Método nuevo
 // RAZÓN: Permite validar que una planta existe antes de guardar eventos
+// CAMBIO: Ahora traduce gorm.ErrRecordNotFound a domainerrors.ErrNotFound
+// RAZÓN: Permite a los handlers distinguir entre 404 (not found) y 500 (internal error)
 func (r *EnergyPlantRepository) FindByID(id uuid.UUID) (*entities.EnergyPlants, error) {
 	var plant entities.EnergyPlants
 	if err := r.db.First(&plant, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, domainerrors.ErrNotFound
+		}
 		return nil, err
 	}
 	return &plant, nil

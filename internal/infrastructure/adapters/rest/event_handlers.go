@@ -15,8 +15,10 @@ package rest
 // - GET /api/v1/events/type/:type - Filtra eventos por tipo (power_reading, alert, etc.)
 
 import (
+	"errors"
 	"net/http"
 
+	domainerrors "monitoring-energy-service/internal/domain/errors"
 	"monitoring-energy-service/internal/infrastructure/container"
 
 	"github.com/gin-gonic/gin"
@@ -50,6 +52,8 @@ func ListEvents(c *container.Container) gin.HandlerFunc {
 // GetEvent obtiene un evento específico por su ID
 // CAMBIO: Handler nuevo
 // RAZÓN: Permite recuperar un evento individual para análisis detallado
+// CAMBIO: Ahora distingue entre errores 404 (not found) y 500 (internal)
+// RAZÓN: Proporciona respuestas HTTP más precisas según el tipo de error
 //
 // GetEvent godoc
 // @Summary      Get an event by ID
@@ -73,7 +77,11 @@ func GetEvent(c *container.Container) gin.HandlerFunc {
 
 		event, err := c.EventRepository.FindByID(id)
 		if err != nil {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "event not found"})
+			if errors.Is(err, domainerrors.ErrNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "event not found"})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 			return
 		}
 		ctx.JSON(http.StatusOK, event)
