@@ -1,7 +1,10 @@
 package repositories
 
 import (
+	"errors"
+
 	"monitoring-energy-service/internal/domain/entities"
+	domainerrors "monitoring-energy-service/internal/domain/errors"
 	"monitoring-energy-service/internal/domain/ports/output"
 
 	"github.com/google/uuid"
@@ -18,9 +21,15 @@ func NewExampleRepository(db *gorm.DB) *ExampleRepository {
 	return &ExampleRepository{db: db}
 }
 
+// FindByID busca un ejemplo específico por su ID
+// CAMBIO: Ahora traduce gorm.ErrRecordNotFound a domainerrors.ErrNotFound
+// RAZÓN: Permite a los handlers distinguir entre 404 (not found) y 500 (internal error)
 func (r *ExampleRepository) FindByID(id uuid.UUID) (*entities.ExampleEntity, error) {
 	var entity entities.ExampleEntity
 	if err := r.db.First(&entity, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, domainerrors.ErrNotFound
+		}
 		return nil, err
 	}
 	return &entity, nil

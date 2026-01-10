@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -77,6 +78,11 @@ func main() {
 		log.Fatalf("Error when performing migrations to database, error: %v", err)
 	}
 
+	err = database.SeedDB(db, "./db")
+	if err != nil {
+		log.Fatalf("Error when seeding database, error: %v", err)
+		os.Exit(1)
+	}
 	timeoutSeconds := cfg.HttpClientTimeout
 	httpClient := &http.Client{
 		Timeout: time.Duration(timeoutSeconds) * time.Second,
@@ -93,6 +99,9 @@ func main() {
 
 	// Start Kafka consumer in background
 	go c.KafkaService.ConsumeEvents()
+
+	// Start Event Generator in background (sends 30 events every 5 minutes)
+	go c.EventGenerator.Start()
 
 	router := gin.New()
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{

@@ -1,9 +1,11 @@
 package rest
 
 import (
+	"errors"
 	"net/http"
 
 	"monitoring-energy-service/internal/domain/entities"
+	domainerrors "monitoring-energy-service/internal/domain/errors"
 	"monitoring-energy-service/internal/infrastructure/container"
 
 	"github.com/gin-gonic/gin"
@@ -69,7 +71,11 @@ func GetExample(c *container.Container) gin.HandlerFunc {
 
 		example, err := c.ExampleRepository.FindByID(id)
 		if err != nil {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "example not found"})
+			if errors.Is(err, domainerrors.ErrNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "example not found"})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 			return
 		}
 		ctx.JSON(http.StatusOK, example)
@@ -133,7 +139,11 @@ func UpdateExample(c *container.Container) gin.HandlerFunc {
 
 		existing, err := c.ExampleRepository.FindByID(id)
 		if err != nil {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "example not found"})
+			if errors.Is(err, domainerrors.ErrNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "example not found"})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 			return
 		}
 

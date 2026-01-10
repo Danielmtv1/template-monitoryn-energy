@@ -17,12 +17,21 @@ import (
 
 type ContainerOption func(*Container)
 
+// Container mantiene todas las dependencias de la aplicación (Dependency Injection)
+//
+// CAMBIOS REALIZADOS:
+// - Agregado EventRepository: Para acceso a base de datos de eventos
+// - Agregado EventGenerator: Para generar eventos automáticamente
+// - Agregado EnergyPlantRepository: Para validar plantas antes de guardar eventos
 type Container struct {
-	db                *gorm.DB
-	cfg               conf.Config
-	KafkaService      input.KafkaServiceInterface
-	WebhookAdapter    output.WebhookAdapterInterface
-	ExampleRepository output.ExampleRepositoryInterface
+	db                    *gorm.DB
+	cfg                   conf.Config
+	KafkaService          input.KafkaServiceInterface
+	WebhookAdapter        output.WebhookAdapterInterface
+	ExampleRepository     output.ExampleRepositoryInterface
+	EventRepository       output.EventRepositoryInterface       // Para gestionar eventos en DB
+	EnergyPlantRepository output.EnergyPlantRepositoryInterface // Para validar plantas
+	EventGenerator        *api.EventGenerator                   // Para generar eventos cada 5 min
 }
 
 func NewContainer(
@@ -43,6 +52,16 @@ func NewContainer(
 	exampleRepository := repositories.NewExampleRepository(db)
 	container.ExampleRepository = exampleRepository
 
+	// CAMBIO: Inicializa EventRepository
+	// RAZÓN: Necesario para que IntakeHandler y REST API puedan acceder a eventos en DB
+	eventRepository := repositories.NewEventRepository(db)
+	container.EventRepository = eventRepository
+
+	// CAMBIO: Inicializa EnergyPlantRepository
+	// RAZÓN: Necesario para validar que las plantas existen antes de guardar eventos
+	energyPlantRepository := repositories.NewEnergyPlantRepository(db)
+	container.EnergyPlantRepository = energyPlantRepository
+
 	// Initialize Kafka
 	kafkaFactory := kafkaconf.NewKafkaFactory(kafkaBrokers, autoOffset)
 	kafkaAdapter := kafka.NewKafkaAdapter(kafkaFactory, consumerGroup)
@@ -54,8 +73,15 @@ func NewContainer(
 	container.WebhookAdapter = webhookAdapter
 
 	// Register Kafka handlers here
-	intakeHandler := api.NewIntakeHandler()
+	// CAMBIO: IntakeHandler ahora recibe eventRepository y energyPlantRepository
+	// RAZÓN: Necesita validar plantas antes de guardar eventos
+	intakeHandler := api.NewIntakeHandler(eventRepository, energyPlantRepository)
 	kafkaService.RegisterHandler(container.cfg.ConsumerTopic, intakeHandler)
+
+	// CAMBIO: Inicializa Event Generator con topic "intake"
+	// RAZÓN: Genera automáticamente 30 eventos cada 5 minutos enviándolos a Kafka
+	eventGenerator := api.NewEventGenerator(kafkaService, "intake")
+	container.EventGenerator = eventGenerator
 
 	return container
 }

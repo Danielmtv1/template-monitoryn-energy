@@ -26,3 +26,34 @@ type ExampleRepositoryInterface interface {
 	Update(entity *entities.ExampleEntity) (*entities.ExampleEntity, error)
 	Delete(id uuid.UUID) error
 }
+
+// EventRepositoryInterface define el contrato para la persistencia de eventos
+//
+// CAMBIO REALIZADO: Interface agregada (líneas 30-35)
+// RAZÓN: Sigue el patrón de arquitectura hexagonal, definiendo el contrato que
+// debe implementar el repositorio de eventos (EventRepository)
+//
+// MÉTODOS:
+// - Create: Guarda un evento consumido desde Kafka
+// - FindAll: Lista todos los eventos (para API REST)
+// - FindByID: Obtiene un evento específico
+// - FindByEventType: Filtra eventos por tipo (power_reading, alert, etc.)
+type EventRepositoryInterface interface {
+	Create(entity *entities.EventEntity) (*entities.EventEntity, error)
+	FindAll() ([]*entities.EventEntity, error)
+	FindByID(id uuid.UUID) (*entities.EventEntity, error)
+	FindByEventType(eventType string) ([]*entities.EventEntity, error)
+}
+
+// EnergyPlantRepositoryInterface define el contrato para la persistencia de plantas de energía
+//
+// CAMBIO REALIZADO: Interface agregada
+// RAZÓN: Necesitamos validar que las plantas existen antes de guardar eventos
+//
+// MÉTODOS:
+// - FindByID: Verifica si una planta existe por su UUID
+// - Exists: Método rápido para validar existencia
+type EnergyPlantRepositoryInterface interface {
+	FindByID(id uuid.UUID) (*entities.EnergyPlants, error)
+	Exists(id uuid.UUID) (bool, error)
+}

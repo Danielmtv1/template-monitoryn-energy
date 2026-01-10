@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"monitoring-energy-service/internal/domain/entities"
 	"monitoring-energy-service/internal/infrastructure/conf"
 
 	"github.com/pressly/goose/v3"
@@ -102,4 +103,43 @@ func findProjectRoot() (string, error) {
 		}
 		dir = parent
 	}
+}
+
+func SeedDB(db *gorm.DB, directory string) error {
+	entitiesFile := []struct {
+		name   string
+		entity interface{}
+	}{
+
+		{"energy_plants", &entities.EnergyPlants{}},
+	}
+
+	for _, item := range entitiesFile {
+		name := item.name
+		entity := item.entity
+		var count int64
+		if db.Model(entity).Count(&count); count == 0 {
+			log.Printf("Seeding model <%s>", name)
+			err := seedData(db, directory, name)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func seedData(db *gorm.DB, directory, name string) error {
+	sqlBytes, err := os.ReadFile(fmt.Sprintf("%s/%s.sql", directory, name))
+	if err != nil {
+		return err
+	}
+
+	sql := string(sqlBytes)
+	if err := db.Exec(sql).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
