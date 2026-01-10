@@ -23,10 +23,7 @@
     "paths": {
         "/api/v1/events": {
             "get": {
-                "description": "Get all events from the database ordered by creation time",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Get all events from the database ordered by creation time with pagination support",
                 "produces": [
                     "application/json"
                 ],
@@ -34,14 +31,27 @@
                     "events"
                 ],
                 "summary": "List all events",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 100,
+                        "description": "Maximum number of events to return (max 1000)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Number of events to skip",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/entities.EventEntity"
-                            }
+                            "$ref": "#/definitions/rest.PaginatedEventsResponse"
                         }
                     },
                     "500": {
@@ -55,10 +65,7 @@
         },
         "/api/v1/events/type/{type}": {
             "get": {
-                "description": "Get all events filtered by event type",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Get all events filtered by event type with pagination support",
                 "produces": [
                     "application/json"
                 ],
@@ -73,16 +80,27 @@
                         "name": "type",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 100,
+                        "description": "Maximum number of events to return (max 1000)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Number of events to skip",
+                        "name": "offset",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/entities.EventEntity"
-                            }
+                            "$ref": "#/definitions/rest.PaginatedEventsResponse"
                         }
                     },
                     "500": {
@@ -97,9 +115,6 @@
         "/api/v1/events/{id}": {
             "get": {
                 "description": "Get a single event by its UUID",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -456,6 +471,33 @@
                 "error": {
                     "type": "string",
                     "example": "error message"
+                }
+            }
+        },
+        "rest.PaginatedEventsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "items": {
+                        "$ref": "#/definitions/entities.EventEntity"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "description": "Total number of events matching the query",
+                    "example": 500
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Number of items requested per page",
+                    "example": 100
+                },
+                "offset": {
+                    "type": "integer",
+                    "description": "Number of items skipped",
+                    "example": 0
                 }
             }
         },
